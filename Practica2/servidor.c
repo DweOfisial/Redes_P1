@@ -9,7 +9,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <arpa/inet.h>
+<<<<<<< HEAD
+#include <stdbool.h>
+
+=======
 #include<stdbool.h>
+>>>>>>> 084c78dc15c74fbafefa9b0bd739d40ddae98f11
 
 #define MSG_SIZE 250
 #define MAX_CLIENTS 50
@@ -21,9 +26,10 @@
 
 void manejador(int signum);
 void salirCliente(int socket, fd_set * readfds, int * numClientes, int arrayClientes[]);
-void escribirFichero(char *buff);
+void escribirFichero(char * usr, char * passw);
 void operaciones();
 void verFraseO(char fraseO[]);
+bool existeUsuario(char * usr);
 
 
 int main ( )
@@ -246,7 +252,6 @@ int main ( )
                                     }
                                     //asdask
                                     //escribirFichero(buffer+12);
-
                                     //guardar en el fichero las cosas k le pasamo    
                                 }else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
                                     if(vCliente[i].estado!=1){
@@ -330,28 +335,45 @@ void manejador (int signum){
     //Implementar lo que se desee realizar cuando ocurra la excepción de ctrl+c en el servidor
 }
 
-void escribirFichero(char * buff){
+void escribirFichero(char * usr, char * passw){
+
+    //Abrimos el fichero "registros.txt" para añadir un usuario
     FILE * f;
     if((f=fopen("registro.txt","a"))==NULL){
         printf("Error al abrir el fichero\n");
     }
-    int cont=1;
-    for(int i=0; i<strlen(buff);i++){
-        if(buff[i]=='-' && buff[i+1]=='p'){
-            break;            
-        }
-        cont++;
-    }
 
-    char * pass=buff+cont+2;
-    char * usr;
-    usr=strtok(buff," -");
-    char * linea;
-    linea=strcat(usr,",");
-    linea=strcat(linea,pass);
-    fputs(linea,f);
+    //Creamos la cadena "usr,passw"
+    char * credenciales=strcat(usr,',');
+    credenciales=strcat(credenciales,passw);
+
+    //Escribimos los datos del nuevo usuario
+    fputs(credenciales,f);
+
     fclose(f);
 }
+
+    //Comprobar si un usuario ya está registrado en el sistema.
+    //Devuelve false si el usuario NO está registrado.
+/* bool existeUsuario(char * usr){
+
+    //Abrimos el fichero para leer
+    FILE *f;
+    if((f=fopen("registro.txt","r"))==NULL){
+        printf("Error al abrir el fichero\n");
+    }
+
+    
+
+    fclose(f);
+
+    if(existe==0){
+        return true;
+    }
+    else{
+        return false;
+    }
+}*/
 
 void operaciones(){
     printf("Operaciones disponibles:\n");
