@@ -14,7 +14,7 @@
 #define MSG_SIZE 250
 #define MAX_CLIENTS 50
 
-
+//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 /*
  * El servidor ofrece el servicio de un chat
  */
