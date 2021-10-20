@@ -14,7 +14,7 @@
 #define MSG_SIZE 250
 #define MAX_CLIENTS 50
 
-//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
 /*
  * El servidor ofrece el servicio de un chat
  */
@@ -44,17 +44,22 @@ int main ( )
     int i,j,k;
 	int recibidos;
    	char identificador[MSG_SIZE];
-    char frase[]="SI TE CAES AL SUELO NO TE LEVANTES";
-    char fraseOculta[]="-- -- ---- -- ----- -- -- --------";
+    char *frase="SI TE CAES AL SUELO NO TE LEVANTES";
+    char *fraseOculta="-- -- ---- -- ----- -- -- --------";
     int on, ret;
 
-    /*typedef struct cliente{
-        char * usr;
-        char * pass;
+    typedef struct cliente{
+        int id;
         int puntuacion;
-        int iniciado;
-    };*/
+        int estado;
+        //-1= no ha iniciado sesion
+        //0= ha iniciado sesion pero no ta en partida
+        //1= esta en partida
+    };
     
+    struct cliente vCliente[MAX_CLIENTS];
+
+
 	/* --------------------------------------------------
 		Se abre el socket 
 	---------------------------------------------------*/
@@ -138,9 +143,15 @@ int main ( )
                             {
                                 if(numClientes < MAX_CLIENTS){
                                     arrayClientes[numClientes] = new_sd;
+
+                                    vCliente[numClientes].id=new_sd;
+                                    vCliente[numClientes].puntuacion=0;
+                                    vCliente[numClientes].estado=-1;
+
+
                                     numClientes++;
                                     FD_SET(new_sd,&readfds);
-                                
+
                                     strcpy(buffer, "Bienvenido al chat\n");
 
                                     send(new_sd,buffer,sizeof(buffer),0);
@@ -191,68 +202,48 @@ int main ( )
                         else{
                             bzero(buffer,sizeof(buffer));                        
                             recibidos = recv(i,buffer,sizeof(buffer),0);
-                            
+                            char *token = strtok(buffer, " ");
                             if(recibidos > 0){
                                 if(strcmp(buffer,"SALIR\n") == 0){
                                     salirCliente(i,&readfds,&numClientes,arrayClientes);
-                                }else if(strcmp(strtok(buffer," "),"USUARIO") == 0){
-                                    printf("usuario\n");
+                                }else if(strcmp(token,"USUARIO") == 0){
+                                    token=strtok(NULL,"USUARIO ");
+                                    token[strlen(token)] = '\0';
+                                    printf("%s\n",token);
+
                                     //llamar pa comprobar k existes
-                                }else if(strcmp(strtok(buffer," "),"PASSWORD") == 0){
+                                }else if(strcmp(token,"PASSWORD") == 0){
                                     printf("pass\n");
+                                    
                                     //llmar pa comprobar k existe
-                                }else if(strcmp(strtok(buffer," "),"REGISTER") == 0){
-                                    printf("registrase\n");
-                                    escribirFichero(buffer+12);
+                                }else if(strcmp(token,"REGISTER") == 0){
+                                    //printf("%s\n"buffer+12);
+
+                                    printf("%s\n",strtok(NULL,"REGISTER "));
+                                    
+                                    //escribirFichero(buffer+12);
+
                                     //guardar en el fichero las cosas k le pasamo    
-                                }else if(strcmp(buffer,"INICIAR_PARTIDA\n") == 0){
-                                    printf("Empieza la parida\n");
-                                    printf("%s",fraseOculta);
+                                }else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
+                                    if(vCliente[i].estado!=1){
+                                        printf("Empieza la parida\n");
+                                        printf("%s",fraseOculta);
+                                        //inisia ka partida  
+                                    }else if(strcmp(token,"CONSONANTE") == 0){
+
+                                    }else if(strcmp(token,"VOCAL") == 0){
+                                        printf("vocal\n");    
+
+                                    }else if(strcmp(token,"RESOLVER") == 0){
+                                        printf("resolver\n");   
+                                        
+                                    }else if(strcmp(buffer,"PUNTUACION\n") == 0){
+                                        printf("puntuacion\n");    
+                                    }else if(strcmp(buffer,"Operaciones\n") == 0){
+                                        operaciones();
+                                    }
 
 
-
-                                    //inisia ka partida  
-                                }else if(strcmp(strtok(buffer," "),"CONSONANTE") == 0){
-                                    //char letra[1]=buffer+10;
-                                    //if(strlen(buffer)==13){
-                                        //printf("Al menos entra?\n");
-                                        //printf("%ld\n",strlen(buffer));
-                                        //printf("%ld\n",strlen(frase));
-                                        char aux[2];
-                                        sprintf(aux,"%s",buffer+11);
-                                        printf("%s",aux);
-                                        printf("%s\n",fraseOculta);
-                                        //char *letra=strtok(buffer," ");
-                                        char *p;
-                                        p=frase;
-                                        printf("%s/n",*p);
-                                        int cont =1;                     
-                                        while (*p != '\0') {
-                                            printf("as\n");
-                                            if (*p ==  aux){
-                                                printf("hay un %s\n",aux);
-                                            }
-                                            p++;
-                                        }
-
-                                        if(cont==0){
-                                            printf("La letra %s no esta en la frase",buffer+11);
-                                        }
-                                        printf("%s\n",fraseOculta);
-                                    //}else{
-                                      //  printf("Formato incorrecto\n");
-                                    //}
-
-                                }else if(strcmp(strtok(buffer," "),"VOCAL") == 0){
-                                    printf("vocal\n");    
-
-                                }else if(strcmp(strtok(buffer," "),"RESOLVER") == 0){
-                                    printf("resolver\n");   
-                                     
-                                }else if(strcmp(buffer,"PUNTUACION\n") == 0){
-                                    printf("puntuacion\n");    
-                                }else if(strcmp(buffer,"Operaciones\n") == 0){
-                                    operaciones();
                                 }
 
                                 for(j=0; j<numClientes; j++){
@@ -276,6 +267,7 @@ int main ( )
 		}
 
 	close(sd);
+
 	return 0;
 	
 }
@@ -331,7 +323,6 @@ void escribirFichero(char * buff){
     char * pass=buff+cont+2;
     char * usr;
     usr=strtok(buff," -");
-
     char * linea;
     linea=strcat(usr,",");
     linea=strcat(linea,pass);
@@ -350,8 +341,4 @@ void operaciones(){
     printf("RESOLVER frase\n");
     printf("Puntuacion\n");
     printf("SALIR\n");
-}
-
-void verFraseO(char fraseO[]){
-    printf("%s",fraseO);
 }
