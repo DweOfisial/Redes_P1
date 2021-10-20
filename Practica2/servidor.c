@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <arpa/inet.h>
-
+#include<stdbool.h>
 
 #define MSG_SIZE 250
 #define MAX_CLIENTS 50
@@ -218,9 +218,33 @@ int main ( )
                                     //llmar pa comprobar k existe
                                 }else if(strcmp(token,"REGISTER") == 0){
                                     //printf("%s\n"buffer+12);
+                                    char * usr;
+                                    char * pass;
+                                    bool FC=false;
+                                    for(int i=0; i<4;i++){
+                                        token=strtok(NULL,"REGISTER ");
+                                        token[strlen(token)] = '\0';
+                                        if(i==0 && strcmp(token,"-u")==0 || i==2 && strcmp(token,"-p")==0){
+                                            FC=true;
+                                        }
+                                        if(i==1){
+                                            usr=token;
+                                        }else if(i==3){
+                                            pass=token;
+                                        }
+                                    }
+                                    if(FC==true){
+                                        if(!exiteUsuario(usr)){
+                                            escribirFichero(usr,pass);
+                                        }else{
+                                            send(i,"Usuario en uso",15,0);
+                                        }
 
-                                    printf("%s\n",strtok(NULL,"REGISTER "));
-                                    
+                                    }
+                                    else{
+                                        send(i,"Formato incorrecto",19,0);
+                                    }
+                                    //asdask
                                     //escribirFichero(buffer+12);
 
                                     //guardar en el fichero las cosas k le pasamo    
