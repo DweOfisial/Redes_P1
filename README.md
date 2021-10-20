@@ -1,2 +1,2 @@
-# Redes_P1
-Es una puta mierda
+# Redes_P2
+Me encanta 
