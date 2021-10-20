@@ -243,7 +243,6 @@ int main ( )
                                         operaciones();
                                     }
 
-
                                 }
 
                                 for(j=0; j<numClientes; j++){
