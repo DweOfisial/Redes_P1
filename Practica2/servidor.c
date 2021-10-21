@@ -49,18 +49,17 @@ int main ( )
     char *fraseOculta="-- -- ---- -- ----- -- -- --------";
     int on, ret;
 
-    typedef struct cliente{
+    struct cliente{
         int id;
         int puntuacion;
         int estado;
         char * nombre;
-        //-1= no ha iniciado sesion
-        //0= ha iniciado sesion pero no ta en partida
-        //1= esta en partida
     };
-    
-    struct cliente vCliente[MAX_CLIENTS];
-
+    /*-1= no ha iniciado sesion
+    0= ha iniciado sesion pero no ta en partida
+    1= esta en partida*/
+    struct cliente * vCliente;
+    vCliente=(struct cliente *) malloc(sizeof(struct cliente)*MAX_CLIENTS); 
 
 	/* --------------------------------------------------
 		Se abre el socket 
@@ -145,10 +144,10 @@ int main ( )
                             {
                                 if(numClientes < MAX_CLIENTS){
                                     arrayClientes[numClientes] = new_sd;
-
-                                    vCliente[numClientes].id=new_sd;
-                                    vCliente[numClientes].puntuacion=0;
-                                    vCliente[numClientes].estado=-1;
+                                    vCliente[new_sd].id=new_sd;
+                                    vCliente[new_sd].puntuacion=0;
+                                    vCliente[new_sd].estado=-1;
+                                    vCliente[new_sd].nombre="";
 
 
                                     numClientes++;
@@ -205,26 +204,34 @@ int main ( )
                             bzero(buffer,sizeof(buffer));                        
                             recibidos = recv(i,buffer,sizeof(buffer),0);
                             char *token = strtok(buffer, " ");
+
+                            printf("%d\n",vCliente[i].id);
+                            printf("%d\n",vCliente[i].estado);
+                            printf("%d\n",vCliente[i].puntuacion);
+                            printf("%s\n",vCliente[i].nombre);
+
                             if(recibidos > 0){
                                 if(strcmp(buffer,"SALIR\n") == 0){
                                     salirCliente(i,&readfds,&numClientes,arrayClientes);
-                                }else if(strcmp(token,"USUARIO") == 0){
+                                }
+                                else if(strcmp(token,"USUARIO") == 0){
                                     token=strtok(NULL,"USUARIO ");
                                     token[strlen(token)] = '\0';                                        
                                     token[strcspn(token, "\n")] = 0;                                    
                                     if(existeUsuario(token)){
                                         send(i,"Usuario correcto, introduzca la password con PASSWORS pass",59,0);
                                         vCliente[i].nombre=token;
-                                        printf("id:%d i:%d\n",vCliente[i].id,i);
                                     }
                                     else{
                                         send(i,"Usuario no registrado",22,0);
-
                                     }
+                                    printf("%d-%s\n",i,vCliente[i].nombre);
 
                                     //llamar pa comprobar k existes
-                                }else if(strcmp(token,"PASSWORD") == 0){
-                                        printf("id:%d i:%d\n",vCliente[i].id,i);
+                                }
+                                else if(strcmp(token,"PASSWORD") == 0){
+                                    printf("%d-%d\n",vCliente[i].id,i);
+                                    printf("%s\n",vCliente[i].nombre);
 
                                     token=strtok(NULL,"PASSWORD ");
                                     token[strlen(token)] = '\0';
@@ -269,25 +276,32 @@ int main ( )
                                         send(i,"Formato incorrecto",19,0);
                                     }
                                       
-                                }else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
+                                }
+                                else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
                                     if(vCliente[i].estado!=1){
                                         printf("Empieza la parida\n");
                                         printf("%s",fraseOculta);
                                         //inisia ka partida  
-                                    }else if(strcmp(token,"CONSONANTE") == 0){
+                                    }
+                                    else if(strcmp(token,"CONSONANTE") == 0){
 
-                                    }else if(strcmp(token,"VOCAL") == 0){
+                                    }
+                                    else if(strcmp(token,"VOCAL") == 0){
                                         printf("vocal\n");    
 
-                                    }else if(strcmp(token,"RESOLVER") == 0){
+                                    }
+                                    else if(strcmp(token,"RESOLVER") == 0){
                                         printf("resolver\n");   
                                         
-                                    }else if(strcmp(buffer,"PUNTUACION\n") == 0){
-                                        printf("puntuacion\n");    
-                                    }else if(strcmp(buffer,"Operaciones\n") == 0){
-                                        operaciones();
                                     }
+                                    else if(strcmp(buffer,"PUNTUACION\n") == 0){
+                                        printf("puntuacion\n");    
+                                    }
+                                    
 
+                                }
+                                else if(strcmp(buffer,"Operaciones\n") == 0){
+                                        operaciones();
                                 }
 
                                 for(j=0; j<numClientes; j++){
@@ -395,18 +409,22 @@ bool existeUsuario(char * usr){
 bool existePass(char * usr, char * pass){
     bool encontrado=false;
     char * line;
-
     //Abrimos el fichero para leer
     FILE *f;
     if((f=fopen("registro.txt","r"))==NULL){
         printf("Error al abrir el fichero\n");
     }
-
+    usr[strcspn(usr, "\n")] = 0;
+    char * UC;
+    UC=strcat(usr,",");
+    printf("%s\n",UC);
     while (fgets(line, sizeof(line), f)) {
         char *token = strtok(line, ",");
         if(strcmp(usr,token )==0){
-            token=strtok(NULL,"usr,");
+            printf("segundo if\n");
+            token=strtok(NULL,UC);
             token[strlen(token)] = '\0';
+            printf("%s\n",token);
             if(strcmp(pass,token)){
                 encontrado=true;
             }
