@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 #define MSG_SIZE 250
-#define MAX_CLIENTS 50
+#define MAX_CLIENTS 30
 
 
 /*
@@ -48,8 +48,10 @@ int main ( )
     int i,j,k;
 	int recibidos;
    	char identificador[MSG_SIZE];
-    char *frase="SI TE CAES AL SUELO NO TE LEVANTES";
-    char *fraseOculta="-- -- ---- -- ----- -- -- --------";
+
+    char frase[MSG_SIZE]="SI TE CAES AL SUELO NO TE LEVANTES";
+    char fraseOculta [MSG_SIZE]="-- -- ---- -- ----- -- -- --------";
+
     int on, ret;
     struct cliente{
         int id;
@@ -58,11 +60,23 @@ int main ( )
         //char * nombre;
     };
     /*-1= no ha iniciado sesion
+    2= ha pasado el usuario
     0= ha iniciado sesion pero no ta en partida
     1= esta en partida*/
     struct cliente * vCliente;
     vCliente=(struct cliente *) malloc(sizeof(struct cliente)*MAX_CLIENTS); 
 
+    struct usrPass{
+        char * usr;
+        char * pass;
+        int id;
+    };
+
+    struct usrPass * listaUP;
+    listaUP=(struct usrPass *) malloc(sizeof(struct usrPass)*MAX_CLIENTS); 
+
+
+ 
 	/* --------------------------------------------------
 		Se abre el socket 
 	---------------------------------------------------*/
@@ -206,7 +220,7 @@ int main ( )
                             bzero(buffer,sizeof(buffer));                        
                             recibidos = recv(i,buffer,sizeof(buffer),0);
                             char *token = strtok(buffer, " ");
-
+                            printf("%d\n",vCliente[i].estado);
                             
 
                             if(recibidos > 0){
@@ -218,9 +232,9 @@ int main ( )
                                     token[strlen(token)] = '\0';                                        
                                     token[strcspn(token, "\n")] = 0;  
                                     if(existeUsuario(token)){
-                                        nombreUsr=token;
-                                        send(i,"Usuario correcto, introduzca la password con PASSWORS pass",59,0);
-                                        
+                                        vCliente[i].estado=2;
+                                        listaUP[i].usr=token;
+                                        send(i,"Usuario correcto, introduzca la password con PASSWORD pass",59,0);                                        
                                     }
                                     else{
                                         send(i,"Usuario no registrado",22,0);
@@ -228,18 +242,28 @@ int main ( )
                                     //llamar pa comprobar k existes
                                 }
                                 else if(strcmp(token,"PASSWORD") == 0){
-                                    printf("%d-%d\n",vCliente[i].id,i);
-                                    printf("%s\n",nombreUsr);
+                                    printf("%d\n",vCliente[i].estado);
+                                    ////////////////
+
+
+                                    //////
 
                                     token=strtok(NULL,"PASSWORD ");
                                     token[strlen(token)] = '\0';
                                     token[strcspn(token, "\n")] = 0;
 
-                                    if(existePass(nombreUsr,token)==true){
-                                        send(i,"Sesion iniciada correctamente",30,0);
-                                        vCliente[i].estado=0;
-                                    }else{
-                                        send(i,"Password incorrecta",20,0);
+                                    if(i==vCliente[i].id && vCliente[i].estado==2){
+
+                                        if(existePass(listaUP[i].usr ,token)==true){
+                                            send(i,"Sesion iniciada correctamente",30,0);
+                                            vCliente[i].estado=0;
+                                        }else{
+                                            send(i,"Password incorrecta",20,0);
+                                        }
+
+                                    }
+                                    else{
+                                        send(i,"Necesitas introducir primero el usuario",40,0);
                                     }
 
                                     
@@ -403,6 +427,9 @@ bool existeUsuario(char * usr){
 
     return encontrado;
 }
+
+
+
 
 //devuelve false si la password no coincide
 bool existePass(char * usr, char * pass){
