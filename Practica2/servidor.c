@@ -27,6 +27,9 @@ void verFraseO(char fraseO[]);
 bool existeUsuario(char * usr);
 bool existePass(char * usr, char * pass);
 
+char * nombreUsr;
+
+
 int main ( )
 {
   
@@ -48,12 +51,11 @@ int main ( )
     char *frase="SI TE CAES AL SUELO NO TE LEVANTES";
     char *fraseOculta="-- -- ---- -- ----- -- -- --------";
     int on, ret;
-
     struct cliente{
         int id;
         int puntuacion;
         int estado;
-        char * nombre;
+        //char * nombre;
     };
     /*-1= no ha iniciado sesion
     0= ha iniciado sesion pero no ta en partida
@@ -147,7 +149,7 @@ int main ( )
                                     vCliente[new_sd].id=new_sd;
                                     vCliente[new_sd].puntuacion=0;
                                     vCliente[new_sd].estado=-1;
-                                    vCliente[new_sd].nombre="";
+                                    //vCliente[new_sd].nombre="";
 
 
                                     numClientes++;
@@ -205,10 +207,7 @@ int main ( )
                             recibidos = recv(i,buffer,sizeof(buffer),0);
                             char *token = strtok(buffer, " ");
 
-                            printf("%d\n",vCliente[i].id);
-                            printf("%d\n",vCliente[i].estado);
-                            printf("%d\n",vCliente[i].puntuacion);
-                            printf("%s\n",vCliente[i].nombre);
+                            
 
                             if(recibidos > 0){
                                 if(strcmp(buffer,"SALIR\n") == 0){
@@ -217,27 +216,26 @@ int main ( )
                                 else if(strcmp(token,"USUARIO") == 0){
                                     token=strtok(NULL,"USUARIO ");
                                     token[strlen(token)] = '\0';                                        
-                                    token[strcspn(token, "\n")] = 0;                                    
+                                    token[strcspn(token, "\n")] = 0;  
                                     if(existeUsuario(token)){
+                                        nombreUsr=token;
                                         send(i,"Usuario correcto, introduzca la password con PASSWORS pass",59,0);
-                                        vCliente[i].nombre=token;
+                                        
                                     }
                                     else{
                                         send(i,"Usuario no registrado",22,0);
                                     }
-                                    printf("%d-%s\n",i,vCliente[i].nombre);
-
                                     //llamar pa comprobar k existes
                                 }
                                 else if(strcmp(token,"PASSWORD") == 0){
                                     printf("%d-%d\n",vCliente[i].id,i);
-                                    printf("%s\n",vCliente[i].nombre);
+                                    printf("%s\n",nombreUsr);
 
                                     token=strtok(NULL,"PASSWORD ");
                                     token[strlen(token)] = '\0';
                                     token[strcspn(token, "\n")] = 0;
 
-                                    if(existePass(vCliente[i].nombre,token)==true){
+                                    if(existePass(nombreUsr,token)==true){
                                         send(i,"Sesion iniciada correctamente",30,0);
                                         vCliente[i].estado=0;
                                     }else{
@@ -246,7 +244,8 @@ int main ( )
 
                                     
                                     //llmar pa comprobar k existe
-                                }else if(strcmp(token,"REGISTER") == 0){
+                                }
+                                else if(strcmp(token,"REGISTER") == 0){
 
                                     char * usr;
                                     char * pass;
