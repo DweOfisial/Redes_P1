@@ -9,12 +9,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <arpa/inet.h>
-<<<<<<< HEAD
 #include <stdbool.h>
-
-=======
-#include<stdbool.h>
->>>>>>> 084c78dc15c74fbafefa9b0bd739d40ddae98f11
 
 #define MSG_SIZE 250
 #define MAX_CLIENTS 50
@@ -30,7 +25,7 @@ void escribirFichero(char * usr, char * passw);
 void operaciones();
 void verFraseO(char fraseO[]);
 bool existeUsuario(char * usr);
-
+bool existePass(char * usr, char * pass);
 
 int main ( )
 {
@@ -58,6 +53,7 @@ int main ( )
         int id;
         int puntuacion;
         int estado;
+        char * nombre;
         //-1= no ha iniciado sesion
         //0= ha iniciado sesion pero no ta en partida
         //1= esta en partida
@@ -214,16 +210,37 @@ int main ( )
                                     salirCliente(i,&readfds,&numClientes,arrayClientes);
                                 }else if(strcmp(token,"USUARIO") == 0){
                                     token=strtok(NULL,"USUARIO ");
-                                    token[strlen(token)] = '\0';
-                                    printf("%s\n",token);
+                                    token[strlen(token)] = '\0';                                        
+                                    token[strcspn(token, "\n")] = 0;                                    
+                                    if(existeUsuario(token)){
+                                        send(i,"Usuario correcto, introduzca la password con PASSWORS pass",59,0);
+                                        vCliente[i].nombre=token;
+                                        printf("id:%d i:%d\n",vCliente[i].id,i);
+                                    }
+                                    else{
+                                        send(i,"Usuario no registrado",22,0);
+
+                                    }
 
                                     //llamar pa comprobar k existes
                                 }else if(strcmp(token,"PASSWORD") == 0){
-                                    printf("pass\n");
+                                        printf("id:%d i:%d\n",vCliente[i].id,i);
+
+                                    token=strtok(NULL,"PASSWORD ");
+                                    token[strlen(token)] = '\0';
+                                    token[strcspn(token, "\n")] = 0;
+
+                                    if(existePass(vCliente[i].nombre,token)==true){
+                                        send(i,"Sesion iniciada correctamente",30,0);
+                                        vCliente[i].estado=0;
+                                    }else{
+                                        send(i,"Password incorrecta",20,0);
+                                    }
+
                                     
                                     //llmar pa comprobar k existe
                                 }else if(strcmp(token,"REGISTER") == 0){
-                                    //printf("%s\n"buffer+12);
+
                                     char * usr;
                                     char * pass;
                                     bool FC=false;
@@ -240,19 +257,18 @@ int main ( )
                                         }
                                     }
                                     if(FC==true){
-                                        if(!exiteUsuario(usr)){
+                                        if(!existeUsuario(usr)){
                                             escribirFichero(usr,pass);
+                                            vCliente[i].estado=0;
                                         }else{
-                                            send(i,"Usuario en uso",15,0);
+                                            send(i,"Error: Usuario en uso",22,0);
                                         }
 
                                     }
                                     else{
                                         send(i,"Formato incorrecto",19,0);
                                     }
-                                    //asdask
-                                    //escribirFichero(buffer+12);
-                                    //guardar en el fichero las cosas k le pasamo    
+                                      
                                 }else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
                                     if(vCliente[i].estado!=1){
                                         printf("Empieza la parida\n");
@@ -344,7 +360,7 @@ void escribirFichero(char * usr, char * passw){
     }
 
     //Creamos la cadena "usr,passw"
-    char * credenciales=strcat(usr,',');
+    char * credenciales=strcat(usr,",");
     credenciales=strcat(credenciales,passw);
 
     //Escribimos los datos del nuevo usuario
@@ -355,7 +371,30 @@ void escribirFichero(char * usr, char * passw){
 
     //Comprobar si un usuario ya está registrado en el sistema.
     //Devuelve false si el usuario NO está registrado.
-/* bool existeUsuario(char * usr){
+bool existeUsuario(char * usr){
+    bool encontrado=false;
+    char * line;
+    //Abrimos el fichero para leer
+    FILE *f;
+    if((f=fopen("registro.txt","r"))==NULL){
+        printf("Error al abrir el fichero\n");
+    }
+    while (fgets(line, sizeof(line), f)) {
+        char * token = strtok(line, ",");
+        if(strcmp(usr,token)==0){
+            encontrado=true;
+        } 
+    }
+
+    fclose(f);
+
+    return encontrado;
+}
+
+//devuelve false si la password no coincide
+bool existePass(char * usr, char * pass){
+    bool encontrado=false;
+    char * line;
 
     //Abrimos el fichero para leer
     FILE *f;
@@ -363,17 +402,21 @@ void escribirFichero(char * usr, char * passw){
         printf("Error al abrir el fichero\n");
     }
 
-    
+    while (fgets(line, sizeof(line), f)) {
+        char *token = strtok(line, ",");
+        if(strcmp(usr,token )==0){
+            token=strtok(NULL,"usr,");
+            token[strlen(token)] = '\0';
+            if(strcmp(pass,token)){
+                encontrado=true;
+            }
+        } 
+    }
 
     fclose(f);
 
-    if(existe==0){
-        return true;
-    }
-    else{
-        return false;
-    }
-}*/
+    return encontrado;
+}
 
 void operaciones(){
     printf("Operaciones disponibles:\n");
