@@ -10,6 +10,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #define MSG_SIZE 250
 #define MAX_CLIENTS 30
@@ -49,8 +50,8 @@ int main ( )
 	int recibidos;
    	char identificador[MSG_SIZE];
 
-    char frase[MSG_SIZE]="SI TE CAES AL SUELO NO TE LEVANTES";
-    char fraseOculta [MSG_SIZE]="-- -- ---- -- ----- -- -- --------";
+    char  frase [MSG_SIZE]="SI TE CAES AL SUELO NO TE LEVANTES";
+    char  fraseOculta [MSG_SIZE] ="-- -- ---- -- ----- -- -- --------";
 
     int on, ret;
     struct cliente{
@@ -59,10 +60,12 @@ int main ( )
         int estado;
         //char * nombre;
     };
-    /*-1= no ha iniciado sesion
-    2= ha pasado el usuario
-    0= ha iniciado sesion pero no ta en partida
-    1= esta en partida*/
+    /*
+    -1 = No ha iniciado sesión
+     0 = Sesión iniciada
+     1 = Buscando partida 
+     2 = Está en partida
+    */
     struct cliente * vCliente;
     vCliente=(struct cliente *) malloc(sizeof(struct cliente)*MAX_CLIENTS); 
 
@@ -227,6 +230,11 @@ int main ( )
                                 if(strcmp(buffer,"SALIR\n") == 0){
                                     salirCliente(i,&readfds,&numClientes,arrayClientes);
                                 }
+
+                                /*************************************
+                                *               USUARIO              *  
+                                **************************************/
+
                                 else if(strcmp(token,"USUARIO") == 0){
                                     token=strtok(NULL,"USUARIO ");
                                     token[strlen(token)] = '\0';                                        
@@ -243,10 +251,6 @@ int main ( )
                                 }
                                 else if(strcmp(token,"PASSWORD") == 0){
                                     printf("%d\n",vCliente[i].estado);
-                                    ////////////////
-
-
-                                    //////
 
                                     token=strtok(NULL,"PASSWORD ");
                                     token[strlen(token)] = '\0';
@@ -300,25 +304,135 @@ int main ( )
                                     }
                                       
                                 }
-                                else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1){
-                                    if(vCliente[i].estado!=1){
-                                        printf("Empieza la parida\n");
-                                        printf("%s",fraseOculta);
-                                        //inisia ka partida  
+                                else if(strcmp(buffer,"INICIAR_PARTIDA\n" ) == 0 || vCliente[i].estado==1 || vCliente[i].estado==2){
+                                    if(vCliente[i].estado!=0){ //Si el cliente tiene la sesión iniciada
+                                        vCliente[i].estado=1; //Cambiamos el estado del cliente a "Buscando partida"
+                                        
+                                        int jugadores_buscando=0;
+                                        int jugador_solo;
+
+                                        for(int cliente_i=0; cliente_i<MAX_CLIENTS; cliente_i++){
+                                            if(vCliente[cliente_i].estado==1){
+                                                vCliente[cliente_i].estado=2;
+                                                jugadores_buscando++;
+                                                jugador_solo=cliente_i;
+                                            } 
+
+                                            if(jugadores_buscando==2){
+                                                break;
+                                            }
+                                            
+                                            if(jugadores_buscando==1 && cliente_i==MAX_CLIENTS){
+                                                vCliente[jugador_solo].estado=1;
+                                            }
+                                        
+                                            
+                                        }
+
+
+                                        
+
+                                        /*
+                                        if(){ //Vemos si hay al menos 2 jugadores para empezar la partida, recorremos el vector de clientes.
+                                            
+                                        }
+                                        else{
+                                            send(i,"+Ok. Petición recibida. Quedamos a la espera de más jugadores.",65,0); //Si no hay jugadores suficientes.
+                                        }*/
+                                        printf("Empieza la partida\n");
+                                        printf("%s\n",fraseOculta);
                                     }
                                     else if(strcmp(token,"CONSONANTE") == 0){
+                                        if(vCliente[i].estado==2){        
+                                            send(i,fraseOculta,strlen(fraseOculta),0);
+                                            token=strtok(NULL,"CONSONANTE ");
+                                            token[strlen(token)] = '\0';
+                                            token[strcspn(token, "\n")] = 0;  
+                                            int cont=0, k=0;
+                                            char *letra=token;
+                                            *letra=toupper((unsigned char) *letra);
+                                            char *a="A";
+                                            char *e="E";
+                                            char *ii="I";
+                                            char *o="O";
+                                            char *u="U";
+                                            char * msg;
+                                            char * p;
+                                            p=frase;
+                                            if(strcmp(letra,a)!=0 && strcmp(letra,e)!=0 && strcmp(letra,ii)!=0 && strcmp(letra,o)!=0 && strcmp(letra,u)!=0 ){
+                                                printf("entro al if\n");
+                                                while(*p != '\0'){
+                                                    if(*p==*letra){
+                                                        printf("hay letras que coinciden\n");
+                                                        fraseOculta[k]=*letra;
+                                                        cont++;
+                                                    }
+                                                    k++;
+                                                    p++;
+                                                }
+                                                vCliente[i].puntuacion=50*cont;
+                                                send(i,fraseOculta,strlen(fraseOculta),0);
 
+                                            }else{
+                                                send(i,"Has introducido una vocal",26,0);
+                                            }
+                                        }
+                                        else{
+                                            send(i,"No has iniciado partida",24,0);
+                                        }
                                     }
                                     else if(strcmp(token,"VOCAL") == 0){
-                                        printf("vocal\n");    
+                                        if(vCliente[i].estado==2){        
+                                            if(vCliente[i].puntuacion>50){
+                                                send(i,fraseOculta,strlen(fraseOculta),0);
+                                                token=strtok(NULL,"VOCAL ");
+                                                token[strlen(token)] = '\0';
+                                                token[strcspn(token, "\n")] = 0;  
+                                                int cont=0, k=0;
+                                                char *letra=token;
+                                                *letra=toupper((unsigned char) *letra);
+                                                char *a="A";
+                                                char *e="E";
+                                                char *ii="I";
+                                                char *o="O";
+                                                char *u="U";
+                                                char * msg;
+                                                char * p;
+                                                p=frase;
+                                                if(strcmp(letra,a)==0 && strcmp(letra,e)==0 && strcmp(letra,ii)==0 && strcmp(letra,o)==0 && strcmp(letra,u)==0 ){
+                                                    printf("entro al if\n");
+                                                    while(*p != '\0'){
+                                                        if(*p==*letra){
+                                                            printf("hay letras que coinciden\n");
+                                                            fraseOculta[k]=*letra;
+                                                            cont++;
+                                                        }
+                                                        k++;
+                                                        p++;
+                                                    }
+                                                    vCliente[i].puntuacion=vCliente[i].puntuacion-50;
+                                                    send(i,fraseOculta,strlen(fraseOculta),0);
 
+                                                }else{
+                                                    send(i,"No has introducido una vocal",26,0);
+                                                }
+                                            }
+                                            else{
+                                                send(i,"No tienes suficientes puntos",29,0);
+                                            }
+                                        }
+                                        else{
+                                            send(i,"No has iniciado partida",24,0);
+                                        }  
                                     }
                                     else if(strcmp(token,"RESOLVER") == 0){
                                         printf("resolver\n");   
                                         
                                     }
                                     else if(strcmp(buffer,"PUNTUACION\n") == 0){
-                                        printf("puntuacion\n");    
+                                        char *pun;
+                                        pun=strcat("Tu puntuaciones es:",vCliente[i].puntuacion);
+                                        sprintf(i,pun,strlen(pun),0);  
                                     }
                                     
 
