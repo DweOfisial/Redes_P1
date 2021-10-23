@@ -249,7 +249,9 @@ int main ( )
                                     }
                                     //llamar pa comprobar k existes
                                 }
-                                else if(strcmp(token,"PASSWORD") == 0){
+                                else if(strcmp(token,"PASSWORD") == 0){//El error es que listaUP[i] esta vacio porque al hacerse
+									//declararse en otro if no se guarda, y entonces no entra bien en
+									//la funcion password y no fufa
                                     printf("%d\n",vCliente[i].estado);
 
                                     token=strtok(NULL,"PASSWORD ");
@@ -554,7 +556,7 @@ bool existePass(char * usr, char * pass){
     if((f=fopen("registro.txt","r"))==NULL){
         printf("Error al abrir el fichero\n");
     }
-    usr[strcspn(usr, "\n")] = 0;
+    usr[strcspn(usr, "\n")] = 0;//ERROR AQUI, que hace que donde usemos usr tb de error
     char * UC;
     UC=strcat(usr,",");
     printf("%s\n",UC);
