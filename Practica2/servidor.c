@@ -27,7 +27,6 @@ void operaciones();
 void verFraseO(char fraseO[]);
 bool existeUsuario(char * usr);
 bool existePass(char * usr, char * pass);
-void rellena_lista();
 
 char * nombreUsr;
 
@@ -59,8 +58,7 @@ int main ( )
         int id;
         int puntuacion;
         int estado;
-        char * usr;
-        char * pass;
+        //char * nombre;
     };
     /*
     -1 = No ha iniciado sesión
@@ -68,15 +66,18 @@ int main ( )
      1 = Buscando partida 
      2 = Está en partida
     */
-    struct cliente *vCliente;
+    struct cliente * vCliente;
     vCliente=(struct cliente *) malloc(sizeof(struct cliente)*MAX_CLIENTS); 
-    
-    struct usuario_lista{
-            char * usr;
-            char * pass;
-        };
-    struct usuario_lista *lista;
-    lista=(struct usuario_lista *) malloc(sizeof(struct usuario_lista)*MAX_CLIENTS); 
+
+    struct usrPass{
+        char * usr;
+        char * pass;
+        int id;
+    };
+
+    struct usrPass * listaUP;
+    listaUP=(struct usrPass *) malloc(sizeof(struct usrPass)*MAX_CLIENTS); 
+
 
  
 	/* --------------------------------------------------
@@ -221,7 +222,8 @@ int main ( )
                         else{
                             bzero(buffer,sizeof(buffer));                        
                             recibidos = recv(i,buffer,sizeof(buffer),0);
-                            char *token = strtok(buffer, " ");                            
+                            char *token = strtok(buffer, " ");
+                            
 
                             if(recibidos > 0){
                                 if(strcmp(buffer,"SALIR\n") == 0){
@@ -236,11 +238,9 @@ int main ( )
                                     token=strtok(NULL,"USUARIO ");
                                     token[strlen(token)] = '\0';                                        
                                     token[strcspn(token, "\n")] = 0;  
-                                    
                                     if(existeUsuario(token)){
-                                        vCliente[i].estado=0;
-                                        vCliente[i].usr=token;
-                                        printf("%s\n",vCliente[i].usr);
+                                        vCliente[i].estado=2;
+                                        listaUP[i].usr=token;
                                         send(i,"Usuario correcto, introduzca la password con PASSWORD pass",59,0);                                        
                                     }
                                     else{
@@ -248,17 +248,16 @@ int main ( )
                                     }
                                     //llamar pa comprobar k existes
                                 }
-                                else if(strcmp(token,"PASSWORD") == 0){//El error es que vCliente[i] esta vacio porque al hacerse
-									//declararse en otro if no se guarda, y entonces no entra bien en
-									//la funcion password y no fufa
-                                    printf("%s\n",vCliente[i].usr);
+                                else if(strcmp(token,"PASSWORD") == 0){
+                                    //printf("%d\n",vCliente[i].estado);
+
                                     token=strtok(NULL,"PASSWORD ");
                                     token[strlen(token)] = '\0';
                                     token[strcspn(token, "\n")] = 0;
 
                                     if(i==vCliente[i].id && vCliente[i].estado==2){
 
-                                        if(existePass(vCliente[i].usr ,token)==true){
+                                        if(existePass(listaUP[i].usr ,token)==true){
                                             send(i,"Sesion iniciada correctamente",30,0);
                                             vCliente[i].estado=0;
                                         }else{
@@ -330,8 +329,10 @@ int main ( )
                                         }
 
                                         if(jugadores_buscando==2){ //Vemos si hay al menos 2 jugadores para empezar la partida, recorremos el vector de clientes.
-                                            send(i,"+Ok. Empieza la partida.",25,0);
-                                            send(i,fraseOculta,strlen(fraseOculta),0);
+                                            for(int k=0; k<MAX_CLIENTS;k++){
+                                                send(k,"+Ok. Empieza la partida.",25,0);
+                                                send(k,fraseOculta,strlen(fraseOculta),0);
+                                            }
                                         }
                                         else{
                                             send(i,"+Ok. Petición recibida. Quedamos a la espera de más jugadores.",65,0); //Si no hay jugadores suficientes.
@@ -356,10 +357,8 @@ int main ( )
                                             char * p;
                                             p=frase;
                                             if(strcmp(letra,a)!=0 && strcmp(letra,e)!=0 && strcmp(letra,ii)!=0 && strcmp(letra,o)!=0 && strcmp(letra,u)!=0 ){
-                                                printf("entro al if\n");
                                                 while(*p != '\0'){
                                                     if(*p==*letra){
-                                                        printf("hay letras que coinciden\n");
                                                         fraseOculta[k]=*letra;
                                                         cont++;
                                                     }
@@ -396,10 +395,8 @@ int main ( )
                                                 char * p;
                                                 p=frase;
                                                 if(strcmp(letra,a)==0 && strcmp(letra,e)==0 && strcmp(letra,ii)==0 && strcmp(letra,o)==0 && strcmp(letra,u)==0 ){
-                                                    printf("entro al if\n");
                                                     while(*p != '\0'){
                                                         if(*p==*letra){
-                                                            printf("hay letras que coinciden\n");
                                                             fraseOculta[k]=*letra;
                                                             cont++;
                                                         }
@@ -421,18 +418,58 @@ int main ( )
                                             send(i,"No has iniciado partida",24,0);
                                         }  
                                     }
-                                    else if(strcmp(token,"RESOLVER") == 0){
+                                    /*else if(strcmp(token,"RESOLVER") == 0){
                                         printf("resolver\n");   
                                         
-                                    }
+                                    }*/
                                     else if(strcmp(buffer,"PUNTUACION\n") == 0){
                                         char *pun;
                                         char *text;
                                         sprintf(text, "%d", vCliente[i].puntuacion);
                                         pun=strcat("Tu puntuaciones es:",text);
-                                        send(i,pun,strlen(pun),0);
+                                        send(i,pun,strlen(pun),0);  
                                     }
                                     
+
+                                }
+                                else if(strcmp(token,"RESOLVER") == 0){
+
+                                    token=strtok(NULL,"RESOLVER ");
+                                    token[strlen(token)] = '\0';
+                                    printf("%s\n",token);
+
+                                    char * solucion=token;
+                                    for(int k=0; k<strlen(solucion);k++){
+                                        solucion[k]=toupper(solucion[k]);
+                                    }
+                                    printf("%s\n",solucion);
+
+                                    char * num;
+                                    char *aux;
+                                    if(strcmp(frase,solucion)==0){
+
+                                        /*sprintf(num,"%d",i);
+                                        aux=strcat("Enhorabuena al jugador ",num);
+                                        aux=strcat(aux," por ganar la partida");*/
+                                        printf("Ha ganado\n");
+                                        for(int k=0; k<MAX_CLIENTS;k++){
+                                            send(k,aux,strlen(aux),0);
+                                            send(k,token,strlen(token),0);
+                                            send(k,"Ha acabado la partida\n",23,0);
+                                        }
+
+                                    }
+                                    else{
+                                        /*sprintf(num,"%d",i);
+                                        aux=strcat("El jugador ",num);
+                                        aux=strcat(aux," ha perdido la frase era: ");*/
+                                        printf("Ha perdio\n");
+                                        for(int k=0; k<MAX_CLIENTS;k++){
+                                            send(k,aux,strlen(aux),0);
+                                            send(k,frase,strlen(frase),0);
+                                            send(k,"Ha acabado la partida\n",23,0);
+                                        }
+                                    }
 
                                 }
                                 else if(strcmp(buffer,"Operaciones\n") == 0){
@@ -500,21 +537,6 @@ void manejador (int signum){
     //Implementar lo que se desee realizar cuando ocurra la excepción de ctrl+c en el servidor
 }
 
-void rellena_lista(){
-    char * line;
-    int cont=0;
-    //Abrimos el fichero para leer
-    FILE *f;
-    if((f=fopen("registro.txt","r"))==NULL){
-        printf("Error al abrir el fichero\n");
-    }
-    while (fgets(line, 250, f)) {
-        char * token =strtok(line, ",");
-        //lista[cont].usr=token;
-        
-    }
-}
-
 void escribirFichero(char * usr, char * passw){
 
     //Abrimos el fichero "registros.txt" para añadir un usuario
@@ -543,7 +565,7 @@ bool existeUsuario(char * usr){
     if((f=fopen("registro.txt","r"))==NULL){
         printf("Error al abrir el fichero\n");
     }
-    while (fgets(line, 250, f)) {
+    while (fgets(line,250, f)) {
         char * token = strtok(line, ",");
         if(strcmp(usr,token)==0){
             encontrado=true;
@@ -562,13 +584,12 @@ bool existeUsuario(char * usr){
 bool existePass(char * usr, char * pass){
     bool encontrado=false;
     char * line;
-    printf("%s\n",usr);
     //Abrimos el fichero para leer
     FILE *f;
     if((f=fopen("registro.txt","r"))==NULL){
         printf("Error al abrir el fichero\n");
     }
-    usr[strcspn(usr, "\n")] = 0;//ERROR AQUI, que hace que donde usemos usr tb de error
+    usr[strcspn(usr, "\n")] = 0;
     char * UC;
     UC=strcat(usr,",");
     printf("%s\n",UC);
@@ -601,4 +622,3 @@ void operaciones(){
     printf("RESOLVER frase\n");
     printf("Puntuacion\n");
     printf("SALIR\n");
-}
