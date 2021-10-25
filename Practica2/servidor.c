@@ -49,6 +49,8 @@ int main ( )
     int i,j,k;
 	int recibidos;
    	char identificador[MSG_SIZE];
+    char letUsada [26]={'A', 'B', 'C', 'D', 'E' , 'F', 'G','H', 'I', 'J', 'K', 'L', 'M', 'N', 'O' , 'P' , 'Q' , 'R' , 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+                                            bool primera=true;
 
     char  frase [MSG_SIZE]="SI TE CAES AL SUELO NO TE LEVANTES";
     char  fraseOculta [MSG_SIZE] ="-- -- ---- -- ----- -- -- --------";
@@ -222,6 +224,7 @@ int main ( )
                         else{
                             bzero(buffer,sizeof(buffer));                        
                             recibidos = recv(i,buffer,sizeof(buffer),0);
+                            //printf("%s\n",resolv);
                             char *token = strtok(buffer, " ");
                             
 
@@ -293,6 +296,7 @@ int main ( )
                                         if(!existeUsuario(usr)){
                                             escribirFichero(usr,pass);
                                             vCliente[i].estado=0;
+                                            send(i,"Usuario creado correctamente",29,0);
                                         }else{
                                             send(i,"Error: Usuario en uso",22,0);
                                         }
@@ -342,6 +346,7 @@ int main ( )
                                     else if(strcmp(token,"CONSONANTE") == 0){
                                         if(vCliente[i].estado==2){        
                                             send(i,fraseOculta,strlen(fraseOculta),0);
+                                            send(i,"\n",2,0);
                                             token=strtok(NULL,"CONSONANTE ");
                                             token[strlen(token)] = '\0';
                                             token[strcspn(token, "\n")] = 0;  
@@ -356,19 +361,36 @@ int main ( )
                                             char * msg;
                                             char * p;
                                             p=frase;
+                                            char* esp="";
+                                            bool lu=false;
                                             if(strcmp(letra,a)!=0 && strcmp(letra,e)!=0 && strcmp(letra,ii)!=0 && strcmp(letra,o)!=0 && strcmp(letra,u)!=0 ){
-                                                while(*p != '\0'){
-                                                    if(*p==*letra){
-                                                        fraseOculta[k]=*letra;
-                                                        cont++;
-                                                    }
-                                                    k++;
-                                                    p++;
-                                                }
-                                                vCliente[i].puntuacion=50*cont;
-                                                send(i,fraseOculta,strlen(fraseOculta),0);
 
-                                            }else{
+                                                for(int l=0;l<26;l++){
+                                                    if(letUsada[l]==* letra){
+                                                        lu=true;
+                                                        letUsada[l]=*esp;    
+                                                    }                                                      
+                                                }
+                                                
+                                                if(lu==true){
+                                                    while(*p != '\0'){
+                                                        if(*p==*letra){
+                                                            fraseOculta[k]=*letra;
+                                                            cont++; 
+                                                            
+                                                        }
+                                                        k++;
+                                                        p++;
+                                                    }
+                                                    vCliente[i].puntuacion=50*cont;
+                                                    send(i,fraseOculta,strlen(fraseOculta),0);
+
+                                                }
+                                                else{
+                                                    send(i,"Letra repetida",15,0);
+                                                }
+                                            }
+                                            else{
                                                 send(i,"Has introducido una vocal",26,0);
                                             }
                                         }
@@ -380,6 +402,7 @@ int main ( )
                                         if(vCliente[i].estado==2){        
                                             if(vCliente[i].puntuacion>50){
                                                 send(i,fraseOculta,strlen(fraseOculta),0);
+                                                send(i,"\n",2,0);
                                                 token=strtok(NULL,"VOCAL ");
                                                 token[strlen(token)] = '\0';
                                                 token[strcspn(token, "\n")] = 0;  
@@ -394,16 +417,19 @@ int main ( )
                                                 char * msg;
                                                 char * p;
                                                 p=frase;
-                                                if(strcmp(letra,a)==0 && strcmp(letra,e)==0 && strcmp(letra,ii)==0 && strcmp(letra,o)==0 && strcmp(letra,u)==0 ){
+                                                if(strcmp(letra,a)==0 || strcmp(letra,e)==0 || strcmp(letra,ii)==0 || strcmp(letra,o)==0 || strcmp(letra,u)==0 ){
+                                                    
                                                     while(*p != '\0'){
                                                         if(*p==*letra){
                                                             fraseOculta[k]=*letra;
-                                                            cont++;
                                                         }
                                                         k++;
                                                         p++;
                                                     }
                                                     vCliente[i].puntuacion=vCliente[i].puntuacion-50;
+                                                    if(vCliente[i].puntuacion<0){
+                                                        vCliente[i].puntuacion=0;
+                                                    }
                                                     send(i,fraseOculta,strlen(fraseOculta),0);
 
                                                 }else{
@@ -432,45 +458,42 @@ int main ( )
                                     
 
                                 }
+
+
                                 else if(strcmp(token,"RESOLVER") == 0){
+                                    /*printf("%s\n",buffer);
+                                    for(int i=0; i<strlen(token);i++){
+                                        token=strtok(NULL,"RESOLVER ");
+                                        token[strlen(token)] = '\0';
+                                        token[strcspn(token, "\n")] = 0;  
 
-                                    token=strtok(NULL,"RESOLVER ");
-                                    token[strlen(token)] = '\0';
-                                    printf("%s\n",token);
-
-                                    char * solucion=token;
-                                    for(int k=0; k<strlen(solucion);k++){
-                                        solucion[k]=toupper(solucion[k]);
+                                        printf("%s\n",token);
                                     }
-                                    printf("%s\n",solucion);
-
-                                    char * num;
+                                    char *solucion;
                                     char *aux;
                                     if(strcmp(frase,solucion)==0){
-
-                                        /*sprintf(num,"%d",i);
-                                        aux=strcat("Enhorabuena al jugador ",num);
-                                        aux=strcat(aux," por ganar la partida");*/
+                                      
                                         printf("Ha ganado\n");
                                         for(int k=0; k<MAX_CLIENTS;k++){
-                                            send(k,aux,strlen(aux),0);
-                                            send(k,token,strlen(token),0);
+                                            send(i,aux,sizeof(aux),0);
+                                            send(i,token,sizeof(token),0);
                                             send(k,"Ha acabado la partida\n",23,0);
                                         }
 
                                     }
                                     else{
-                                        /*sprintf(num,"%d",i);
+                                        sprintf(num,"%d",i);
                                         aux=strcat("El jugador ",num);
-                                        aux=strcat(aux," ha perdido la frase era: ");*/
+                                        aux=strcat(aux," ha perdido la frase era: ");
                                         printf("Ha perdio\n");
                                         for(int k=0; k<MAX_CLIENTS;k++){
-                                            send(k,aux,strlen(aux),0);
-                                            send(k,frase,strlen(frase),0);
+                                            send(i,aux,sizeof(aux),0);
+                                            send(i,"La frase era: ",15,0);
+                                            send(i,frase,sizeof(frase),0);
                                             send(k,"Ha acabado la partida\n",23,0);
                                         }
                                     }
-
+                                    */
                                 }
                                 else if(strcmp(buffer,"Operaciones\n") == 0){
                                         operaciones();
@@ -622,3 +645,4 @@ void operaciones(){
     printf("RESOLVER frase\n");
     printf("Puntuacion\n");
     printf("SALIR\n");
+}
