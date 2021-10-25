@@ -71,7 +71,16 @@ int main ( )
 		Se transmite la información
 	-------------------------------------------------------------------*/
 
-
+    printf("Opciones: \n");
+    printf("1.USUARIO usr\n");
+    printf("2.PASSWORD pass\n");
+    printf("3.REGISTER -u usr -p pass\n");
+    printf("4.INICIAR_PARTIDA\n");
+    printf("5.CONSONANTE letra\n");
+    printf("6.VOCAL letra\n");
+    printf("7.RESOLVER frase\n");
+    printf("8.PUNTUACION\n");
+    printf("9.SALIR\n");
 	
 	do
 	{
